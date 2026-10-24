@@ -569,6 +569,16 @@ Frontend API integration
 
 User-facing project presentation and interface refinement
 
+Harshit Singh
+
+Database development and implementation
+
+Database schema, tables, and relationships
+
+Database queries and data management
+
+Database configuration and backend integration
+
 📌 Current Deployment Links
 
 Component        Link
