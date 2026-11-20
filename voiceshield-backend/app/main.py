@@ -47,7 +47,7 @@ async def log_requests(request: Request, call_next):
         logger.error(
             f"{request.method} {request.url.path} - ERROR: {exc} ({duration}ms)"
         )
-        raise exc
+        raise
 
 
 # ======================================================

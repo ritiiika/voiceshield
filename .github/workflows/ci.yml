@@ -33,7 +33,7 @@ jobs:
 
       - name: Check code formatting and linting
         run: |
-          ruff check voiceshield-backend/app voiceshield-backend/tests --ignore E501
+          ruff check voiceshield-backend/app voiceshield-backend/tests --select E,F --ignore E501
 
   # ============================================================================
   # 2. Automated Unit & Integration Tests
