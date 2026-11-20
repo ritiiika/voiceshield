@@ -1,8 +1,8 @@
 import axios from 'axios';
 import { INITIAL_CALLS } from './mockData';
 
-// API Base URL - handles both direct local backend and proxied Vite requests
-const API_BASE = 'http://127.0.0.1:8000';
+// API Base URL - handles environment override, Render deployment, or local backend
+const API_BASE = import.meta.env.VITE_API_BASE || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://127.0.0.1:8000' : 'https://voiceshield-zv5v.onrender.com');
 
 const client = axios.create({
   baseURL: '', // Uses Vite proxy in development or direct routes

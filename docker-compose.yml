@@ -1,0 +1,100 @@
+services:
+  # ============================================================================
+  # VoiceShield Core FastAPI Backend
+  # ============================================================================
+  voiceshield-api:
+    build:
+      context: ./voiceshield-backend
+      dockerfile: Dockerfile
+    container_name: voiceshield-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./voiceshield-backend/.env
+    environment:
+      - OLLAMA_URL=${OLLAMA_URL:-http://host.docker.internal:11434/api/generate}
+      - MODEL_NAME=${MODEL_NAME:-qwen2.5:1.5b-instruct-q4_0}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000,http://127.0.0.1:3000,http://localhost:80
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 45s
+    networks:
+      - voiceshield-network
+
+  # ============================================================================
+  # VoiceShield Cybersecurity SOC Frontend Dashboard
+  # ============================================================================
+  voiceshield-dashboard:
+    build:
+      context: ./voiceshield-dashboard
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_BASE=http://localhost:8000
+    container_name: voiceshield-dashboard
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      voiceshield-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - voiceshield-network
+
+  # ============================================================================
+  # Optional: Local Redis Cache (Run with: docker compose --profile local-redis up)
+  # ============================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: voiceshield-redis
+    restart: unless-stopped
+    profiles:
+      - local-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - voiceshield-network
+
+  # ============================================================================
+  # Optional: Containerized Ollama (Run with: docker compose --profile local-ai up)
+  # ============================================================================
+  ollama:
+    image: ollama/ollama:latest
+    container_name: voiceshield-ollama
+    restart: unless-stopped
+    profiles:
+      - local-ai
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - voiceshield-network
+
+networks:
+  voiceshield-network:
+    name: voiceshield-network
+    driver: bridge
+
+volumes:
+  redis_data:
+  ollama_data:

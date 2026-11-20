@@ -1,12 +1,13 @@
 import json
+import os
 import re
 import requests
 
 from app.schemas.security import SecurityRequest
 
 
-OLLAMA_URL = "http://localhost:11434/api/generate"
-MODEL_NAME = "qwen2.5:1.5b-instruct-q4_0"
+OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434/api/generate")
+MODEL_NAME = os.getenv("MODEL_NAME", "qwen2.5:1.5b-instruct-q4_0")
 
 
 def call_ollama(prompt: str) -> str:

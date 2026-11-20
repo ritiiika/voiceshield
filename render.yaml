@@ -1,0 +1,25 @@
+services:
+  # ============================================================================
+  # VoiceShield FastAPI Web Service
+  # ============================================================================
+  - type: web
+    name: voiceshield-api
+    runtime: docker
+    dockerfilePath: ./voiceshield-backend/Dockerfile
+    dockerContext: ./voiceshield-backend
+    plan: standard
+    region: oregon
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: OLLAMA_URL
+        sync: false
+      - key: MODEL_NAME
+        value: qwen2.5:1.5b-instruct-q4_0
+      - key: CORS_ORIGINS
+        value: "https://voiceshield-dashboard.onrender.com,http://localhost:5173,http://localhost:3000"
+      - key: LOG_LEVEL
+        value: INFO
