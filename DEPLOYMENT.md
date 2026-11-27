@@ -186,3 +186,46 @@ Structured JSON logging captures:
 - Request method, path, status code
 - Processing time in milliseconds (`X-Process-Time-Ms`)
 - Exception stack traces (sanitized without logging raw voice audio or caller credentials)
+
+---
+
+## ☸️ Kubernetes Deployment (Local Minikube / kind)
+
+VoiceShield includes production-grade Kubernetes manifests inside the `k8s/` directory.
+
+### Architecture in Kubernetes:
+- **Namespace:** `voiceshield`
+- **ConfigMap & Secret:** Externalized configuration (`voiceshield-config`, `voiceshield-secret`)
+- **Redis Cache:** In-cluster ClusterIP service on `voiceshield-redis:6379` with `redis-cli ping` probes
+- **FastAPI Backend (2–5 Pods):** Monitored by HTTP liveness (`/health`) and readiness (`/health/ready`) probes, auto-scaled via HPA based on 70% CPU target
+- **SOC Dashboard (Nginx):** Exposed via NodePort `30080` (or Port Forward), internally proxying to `voiceshield-api:8000`
+
+### 1. Start Minikube & Enable Metrics Server
+```bash
+minikube start --driver=docker
+minikube addons enable metrics-server
+```
+
+### 2. Load Local Images into Cluster
+```bash
+minikube image load voiceshield-voiceshield-api:latest
+minikube image load voiceshield-voiceshield-dashboard:latest
+minikube image load redis:7-alpine
+```
+
+### 3. Deploy Stack
+```bash
+kubectl apply -k k8s/
+```
+
+### 4. Verify Resources
+```bash
+kubectl get pods,svc,hpa -n voiceshield
+```
+
+### 5. Access Dashboard
+```bash
+minikube service voiceshield-dashboard -n voiceshield
+# Or port-forward directly:
+kubectl port-forward svc/voiceshield-dashboard -n voiceshield 3000:80
+```

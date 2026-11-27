@@ -2,6 +2,7 @@
 
 [![CI/CD Pipeline](https://github.com/ritiiika/voiceshield/actions/workflows/ci.yml/badge.svg)](https://github.com/ritiiika/voiceshield/actions/workflows/ci.yml)
 [![Docker](https://img.shields.io/badge/Docker-Multi--Stage%20Builds-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
+[![Kubernetes](https://img.shields.io/badge/Kubernetes-HPA%20%26%20Probes-326CE5?logo=kubernetes&logoColor=white)](https://kubernetes.io/)
 [![GHCR Registry](https://img.shields.io/badge/Container%20Registry-GHCR.io-black?logo=github&logoColor=white)](https://github.com/ritiiika/voiceshield/pkgs/container/voiceshield-api)
 [![Security Scan](https://img.shields.io/badge/Security%20Scan-Trivy%20Passed-00C7B7?logo=aquasecurity&logoColor=white)](https://trivy.dev/)
 [![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](https://python.org)
@@ -264,3 +265,58 @@ voiceshield/
 ## 📄 License & Disclaimer
 
 VoiceShield is an academic/hackathon prototype designed to demonstrate AI-assisted cybersecurity threat detection. Security decisions should be combined with human-in-the-loop review in high-stakes environments.
+
+
+---
+
+## ?? Kubernetes Local Deployment & Autoscaling (Minikube / kind)
+
+VoiceShield includes production-ready Kubernetes manifests in the [`k8s/`](./k8s) directory with health probes, externalized ConfigMaps/Secrets, and HPA autoscaling.
+
+```
++--------------------------------------------------------------------------------+
+|                             Namespace: voiceshield                             |
+|                                                                                |
+|  +---------------------------+       NodePort:30080       +------------------+ |
+|  |   voiceshield-dashboard   | <========================= |  Client / User   | |
+|  | (1 Pod, Nginx SPA proxy)  |                            +------------------+ |
+|  +---------------------------+                                                 |
+|               |                                                                |
+|               | (internal proxy: http://voiceshield-api:8000)                  |
+|               v                                                                |
+|  +---------------------------+       Autoscaled by HPA    +------------------+ |
+|  |      voiceshield-api      | <------------------------- | HPA (2 to 5 Pods)| |
+|  | (FastAPI, 2 to 5 replicas)|   (target: 70% CPU load)   +------------------+ |
+|  +---------------------------+                                                 |
+|               |                                                                |
+|               | (redis://voiceshield-redis:6379/0)                             |
+|               v                                                                |
+|  +---------------------------+                                                 |
+|  |     voiceshield-redis     |                                                 |
+|  | (ClusterIP caching service|                                                 |
+|  +---------------------------+                                                 |
++--------------------------------------------------------------------------------+
+```
+
+### Quick Deploy:
+```bash
+# 1. Start Minikube & enable metrics-server
+minikube start --driver=docker
+minikube addons enable metrics-server
+
+# 2. Load images into Minikube
+minikube image load voiceshield-voiceshield-api:latest
+minikube image load voiceshield-voiceshield-dashboard:latest
+minikube image load redis:7-alpine
+
+# 3. Apply manifests
+kubectl apply -k k8s/
+
+# 4. Check status & autoscaler
+kubectl get pods,svc,hpa -n voiceshield
+
+# 5. Open Dashboard
+minikube service voiceshield-dashboard -n voiceshield
+```
+
+See [`k8s/README.md`](./k8s/README.md) for full instructions, probe specifications, and load-testing steps.
